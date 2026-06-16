@@ -7,10 +7,11 @@ export const addAlasHakValidationRules = [
     validator.stringOptional("ket"),
     validator.dateOptional("tgl_alas_hak"),
     validator.dateOptional("tgl_surat_ukur"),
-    validator.stringOptional("address_code"),
+    validator.stringRequired("address_code"),
     validator.numericalRequired("type_id"),
     validator.numericalRequired("luas"),
     validator.numericalOptional("parent_id"),
+    validator.isArrayOfObjectsRequired("clients"),
 ];
 
 export const updateAlasHakValidationRules = [
@@ -23,18 +24,23 @@ export const updateAlasHakValidationRules = [
     validator.stringOptional("address_code"),
     validator.numericalOptional("type_id"),
     validator.numericalOptional("luas"),
+    validator.isArrayOfObjects("clients"),
 ];
 
 export const searchAlasHakValidationRules = [
-    validator.stringOptional("address_code", "query"),
-    validator.numericalOptional("nomor", "query"),
+    validator.stringOptional("search", "query"),
 ];
 
 export const addAlasHakOwnerValidationRules = [
-    validator.arrayOfNumberRequired("clients_id"),
+    validator.isArrayOfObjects("clients"),
 ];
 
 export const removeAlasHakOwnerValidationRules = [
-    validator.numericalRequired("id", "param"),
     validator.numericalRequired("client_id", "param"),
+];
+
+export const fileNameValidtationRules = [validator.stringRequired("type")];
+
+export const deleteDocumentValidationRules = [
+    validator.numericalRequired("doc_id", "query"),
 ];

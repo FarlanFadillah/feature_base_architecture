@@ -7,8 +7,7 @@ import { ExpressError } from "../../shared/utils/custom.error.mjs";
 export async function verifyPassword(username, password) {
     try {
         const user = await authRepo.getUserByUsername(username);
-        if (!user) throw new ExpressError("Username not found!");
-
+        if (!user) throw new ExpressError("user not found!");
         const match = await crypt.compareHash(password, user.hash);
         return { user, match };
     } catch (error) {
@@ -30,7 +29,7 @@ export async function registerUser(model) {
 
         delete model.password;
 
-        await mainRepo.create("users", { ...model, hash });
+        return await mainRepo.create("users", { ...model, hash });
     } catch (error) {
         throw error;
     }

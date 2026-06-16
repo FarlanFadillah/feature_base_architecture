@@ -1,5 +1,5 @@
 import db from "../../dbs/db.mjs";
-import { ExpressError } from "../utils/custom.error.mjs";
+import { ExpressError, KnexError } from "../utils/custom.error.mjs";
 
 /**
  *
@@ -11,18 +11,27 @@ export async function create(table, model) {
         const [id] = await db(table).insert(model);
         return id;
     } catch (error) {
-        if (error.code === "SQLITE_CONSTRAINT")
-            throw new ExpressError("This data already exists", 409);
-        else if (error.code === "ER_DUP_ENTRY") {
-            throw new ExpressError(
-                "An entry with the provided data already exists",
-                409,
-            );
-        } else if (error.code === "ER_NO_REFERENCED_ROW_2") {
-            console.log("DEBUG : ", error.constraint);
-            throw new ExpressError(error.sqlMessage, 422, error.code);
-        }
-        throw new ExpressError(error.message);
+        throw new KnexError(
+            error.message,
+            error.code,
+            error.errno,
+            error.sqlState,
+            error.sqlMessage,
+            error.sql,
+        );
+        // console.log(error);
+        // if (error.code === "SQLITE_CONSTRAINT")
+        //     throw new ExpressError("This data already exists", 409);
+        // else if (error.code === "ER_DUP_ENTRY") {
+        //     throw new ExpressError(
+        //         "An entry with the provided data already exists",
+        //         409,
+        //     );
+        // } else if (error.code === "ER_NO_REFERENCED_ROW_2") {
+        //     console.log("DEBUG : ", error.constraint);
+        //     throw new ExpressError(error.sqlMessage, 422, error.code);
+        // }
+        // throw new ExpressError(error.message);
     }
 }
 
@@ -45,7 +54,14 @@ export async function remove(table, id) {
             await trx(table).where({ id: id }).delete();
         });
     } catch (error) {
-        throw new ExpressError(error.message);
+        throw new KnexError(
+            error.message,
+            error.code,
+            error.errno,
+            error.sqlState,
+            error.sqlMessage,
+            error.sql,
+        );
     }
 }
 
@@ -63,7 +79,14 @@ export async function removeWhere(table, model) {
             await trx(table).where(model).delete();
         });
     } catch (error) {
-        throw new ExpressError(error.message);
+        throw new KnexError(
+            error.message,
+            error.code,
+            error.errno,
+            error.sqlState,
+            error.sqlMessage,
+            error.sql,
+        );
     }
 }
 
@@ -71,26 +94,28 @@ export async function removeWhere(table, model) {
  *
  * @param {String} table
  * @param {Number} id
- * @param {Object} model
+ * @param {Object} data
+ * @param {import("knex").Knex.Transaction}
  */
-export async function update(table, id, model) {
+export async function update(table, id, data, trx) {
     try {
-        await db.transaction(async (trx) => {
-            await db(table).where({ id: id }).forUpdate();
-            await trx(table)
-                .update({
-                    ...model,
-                    updated_at: db.fn.now(),
-                })
-                .where({ id: id });
-        });
+        const conn = trx || db;
+        await conn(table).where({ id: id }).forUpdate();
+        await conn(table)
+            .update({
+                ...data,
+                updated_at: new Date(),
+            })
+            .where({ id: id });
     } catch (error) {
-        if (error.code === "SQLITE_CONSTRAINT")
-            throw new ExpressError(error.sqlMessage, 409);
-        else if (error.code === "ER_DUP_ENTRY") {
-            throw new ExpressError(error.sqlMessage, 409);
-        }
-        throw new ExpressError(error.message);
+        throw new KnexError(
+            error.message,
+            error.code,
+            error.errno,
+            error.sqlState,
+            error.sqlMessage,
+            error.sql,
+        );
     }
 }
 
@@ -103,12 +128,14 @@ export async function updateNoUpdatedAt(table, id, model) {
                 .where({ id });
         });
     } catch (error) {
-        if (error.code === "SQLITE_CONSTRAINT")
-            throw new ExpressError(error.sqlMessage, 409);
-        else if (error.code === "ER_DUP_ENTRY") {
-            throw new ExpressError(error.sqlMessage, 409);
-        }
-        throw new ExpressError(error.message);
+        throw new KnexError(
+            error.message,
+            error.code,
+            error.errno,
+            error.sqlState,
+            error.sqlMessage,
+            error.sql,
+        );
     }
 }
 
@@ -125,7 +152,14 @@ export async function updateWhere(table, model, data) {
             await trx(table).where(model).update(data);
         });
     } catch (error) {
-        throw new ExpressError(error.message);
+        throw new KnexError(
+            error.message,
+            error.code,
+            error.errno,
+            error.sqlState,
+            error.sqlMessage,
+            error.sql,
+        );
     }
 }
 
@@ -145,7 +179,14 @@ export async function isExists(table, id, trx) {
             .first();
         return count > 0;
     } catch (error) {
-        throw error;
+        throw new KnexError(
+            error.message,
+            error.code,
+            error.errno,
+            error.sqlState,
+            error.sqlMessage,
+            error.sql,
+        );
     }
 }
 
@@ -163,7 +204,14 @@ export async function isRowExists(table, model) {
             .first();
         return count > 0;
     } catch (error) {
-        throw new ExpressError(error.message);
+        throw new KnexError(
+            error.message,
+            error.code,
+            error.errno,
+            error.sqlState,
+            error.sqlMessage,
+            error.sql,
+        );
     }
 }
 

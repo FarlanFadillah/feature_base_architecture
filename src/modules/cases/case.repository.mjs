@@ -382,7 +382,7 @@ export async function getById(id, trx) {
 
 export async function getFilteredCases(limit, offset, filters) {
     try {
-        const data = await db(`${TABLE.CASES} as c`)
+        const cases = await db(`${TABLE.CASES} as c`)
             .select(["c.id", "c.code", "c.status", "prd.name as products"])
             .select(
                 db.raw(
@@ -430,7 +430,7 @@ export async function getFilteredCases(limit, offset, filters) {
                 }
             })
             .count("id as count");
-        return { data, count };
+        return { cases, count };
     } catch (error) {
         throw new ExpressError(error.message);
     }
@@ -444,14 +444,14 @@ export async function getFilteredCases(limit, offset, filters) {
  */
 export async function getAll(limit, offset) {
     try {
-        const data = await db(`${TABLE.CASES} as c`)
+        const cases = await db(`${TABLE.CASES} as c`)
             .leftJoin(`${TABLE.$CASES.PRD} as prd`, "prd.id", "c.prd_id")
             .select(["c.id", "c.code", "c.status", "prd.name as products"])
             .limit(limit)
             .offset(offset);
 
         const [{ count }] = await db(TABLE.CASES).count("id as count");
-        return { data, count };
+        return { cases, count };
     } catch (error) {
         throw new ExpressError(error.message);
     }

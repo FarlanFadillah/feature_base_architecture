@@ -40,11 +40,11 @@ export async function removeClient(id) {
 /**
  *
  * @param {Number} id
- * @param {Object} model
+ * @param {Object} data
  */
-export async function updateClientData(id, model) {
+export async function updateClientData(id, data) {
     try {
-        await mainRepo.update("clients", id, model);
+        await mainRepo.update("clients", id, data);
 
         cache.delByPattern(`:clients:id:${id}`);
         cache.delByPattern(":clients:list:");
@@ -58,8 +58,9 @@ export async function updateClientData(id, model) {
  * @param {Number} cl_id
  * @param {String} type
  * @param {String} path
+ * @param {Number} fileSize
  */
-export async function saveClientDocument(cl_id, type, path) {
+export async function saveClientDocument(cl_id, type, path, fileSize) {
     try {
         await db.transaction(async (trx) => {
             const exists = await mainRepo.isExists("clients", cl_id, trx);
@@ -67,10 +68,41 @@ export async function saveClientDocument(cl_id, type, path) {
                 throw new ExpressError(
                     `Client with id ${cl_id} does not extist`,
                 );
-            await clientRepo.saveDocs({ cl_id, type, path }, trx);
+            await clientRepo.saveDocs(
+                { cl_id, type, path, size: fileSize },
+                trx,
+            );
         });
+        cache.delByPattern(`:clients:list:`);
+        cache.delByPattern(`:clients:id:${cl_id}`);
     } catch (error) {
         await fileUtils.deleteFile(path);
+        throw error;
+    }
+}
+
+/**
+ *
+ * @param {Number} id
+ * @param {Number} doc_id
+ * @param {String} path
+ */
+export async function deleteCLientDocument(id, doc_id) {
+    try {
+        console.log(id, doc_id);
+        await db.transaction(async (trx) => {
+            const docs = await clientRepo.lockDocForUpdate(doc_id, trx);
+            if (!docs) throw new ExpressError("Document not found", 404);
+
+            await clientRepo.delDocs(docs.id, trx);
+            if (fileUtils.isExists(docs.path)) {
+                fileUtils.deleteFile(docs.path);
+            }
+        });
+
+        cache.delByPattern(`:clients:list:`);
+        cache.delByPattern(`:clients:id:${id}`);
+    } catch (error) {
         throw error;
     }
 }
@@ -85,6 +117,16 @@ export async function getClient(id) {
         const clients = await clientRepo.getByIdWithDetails(Number(id));
         if (!clients) throw new ExpressError("Client Not Found", 404);
         return clients;
+    } catch (error) {
+        throw error;
+    }
+}
+
+export async function getClientForUpdate(id) {
+    try {
+        const client = await clientRepo.getById(id);
+        if (!client) throw new ExpressError("Client not found", 404);
+        return client;
     } catch (error) {
         throw error;
     }
@@ -109,14 +151,21 @@ export async function getAllClients(limit, cursor, order = "asc") {
  *
  * @param {Number} limit
  * @param {Number} offset
+ * @param {String} search
  * @returns
  */
-export async function getAllClientsLimitOffset(limit, currentpage) {
+export async function getAllClientsLimitOffset(
+    limit,
+    currentpage,
+    search = null,
+) {
     try {
         const offset = (currentpage - 1) * limit;
         const { data, count } = await clientRepo.getAllLimitOffset(
             limit,
             offset,
+            search,
+            ["nik", "fullname"],
         );
 
         const _metadata = jsonHelper.paginationMetadata(
@@ -127,37 +176,6 @@ export async function getAllClientsLimitOffset(limit, currentpage) {
         );
 
         // const clients = jsonHelper.destructureAddressesDetails(data);
-        return { clients: data, _metadata };
-    } catch (error) {
-        throw error;
-    }
-}
-
-/**
- *
- * @param {String} keyword
- * @param {Number} limit
- * @param {Number} currentpage
- * @returns
- */
-export async function searchClient(keyword, limit, currentpage) {
-    try {
-        const offset = (currentpage - 1) * limit;
-        const { data, count } = await clientRepo.search(
-            ["nik", "fullname"],
-            keyword,
-            limit,
-            offset,
-        );
-        // const clients = jsonHelper.destructureAddressesDetails(data);
-        const _metadata = jsonHelper.paginationMetadata(
-            "clients/search",
-            currentpage,
-            limit,
-            count,
-            [`keyword=${keyword}`],
-        );
-
         return { clients: data, _metadata };
     } catch (error) {
         throw error;

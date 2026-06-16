@@ -8,6 +8,7 @@ import { validateToken } from "../../shared/middlewares/jwt.middleware.mjs";
 import { validate } from "../../shared/middlewares/validator.middleware.mjs";
 import { pagination } from "../../shared/middlewares/pagination.middleware.mjs";
 import { keyBuilder } from "../../shared/utils/cachekeybuilder.mjs";
+import { upload } from "../../shared/middlewares/upload.middleware.js";
 
 const router = express.Router();
 
@@ -18,21 +19,14 @@ router
     .post(...rules.addAlasHakValidationRules, validate, ctrl.addAlasHak)
     .get(
         ...mainRules.paginationValidationRules,
+        ...rules.searchAlasHakValidationRules,
         validate,
         pagination,
         cache.cachingMiddleware(keyBuilder("alas-hak:list")),
         ctrl.getAllAlasHak,
     );
 
-router.get(
-    "/search",
-    ...rules.searchAlasHakValidationRules,
-    ...mainRules.paginationValidationRules,
-    validate,
-    pagination,
-    cache.cachingMiddleware(keyBuilder("alas-hak:list")),
-    ctrl.searchAlasHak,
-);
+router.get("/types", ctrl.getAlasHakTypes);
 
 router
     .route("/:id")
@@ -56,6 +50,29 @@ router
         ctrl.getAlasHak,
     );
 
+router.get(
+    "/:id/edit",
+    ...mainRules.IDValidationRules,
+    validate,
+    ctrl.getAlasHakForUpdate,
+);
+
+router
+    .route("/:id/uploads")
+    .post(
+        upload.single("document"),
+        ...mainRules.IDValidationRules,
+        ...rules.fileNameValidtationRules,
+        validate,
+        ctrl.uploadDocument,
+    )
+    .delete(
+        ...mainRules.IDValidationRules,
+        ...rules.deleteDocumentValidationRules,
+        validate,
+        ctrl.deleteDocument,
+    );
+
 router
     .route("/:id/owners")
     .post(
@@ -74,6 +91,7 @@ router
 router
     .route("/:id/owners/:client_id")
     .delete(
+        ...mainRules.IDValidationRules,
         ...rules.removeAlasHakOwnerValidationRules,
         validate,
         ctrl.removeAlasHakOwners,

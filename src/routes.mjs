@@ -14,7 +14,7 @@ const defaultRoutes = [
         router: authRouter,
     },
     {
-        path: "/addresses",
+        path: "/address",
         router: addressRouter,
     },
     {

@@ -11,8 +11,11 @@ export async function get(id) {
 
 export async function getUserByUsername(username) {
     try {
-        return await db("users").where({ username }).first();
+        const [[user]] = await db.raw(
+            `SELECT * FROM users WHERE BINARY username = '${username}' LIMIT 1`,
+        );
+        return user;
     } catch (error) {
-        throw ExpressError(error.message);
+        throw new ExpressError(error.message);
     }
 }

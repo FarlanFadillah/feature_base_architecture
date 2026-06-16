@@ -25,7 +25,11 @@ export const patchClientValidationRules = [
 ];
 
 export const searchValidationRules = [
-    validator.stringRequired("keyword", "query"),
+    validator.stringOptional("search", "query"),
+];
+
+export const deleteDocumentValidationRules = [
+    validator.numericalRequired("doc_id", "query"),
 ];
 
 export const filenameValidationRules = [validator.stringRequired("type")];

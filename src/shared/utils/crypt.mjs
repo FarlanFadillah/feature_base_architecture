@@ -1,4 +1,5 @@
 import bcrypt from "bcrypt";
+import { ExpressError } from "./custom.error.mjs";
 
 export function hashing(password) {
     return new Promise((resolve, reject) => {

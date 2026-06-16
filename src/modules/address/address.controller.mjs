@@ -13,15 +13,22 @@ export const getKelurahan = asyncHandler(async (req, res, next) => {
         Number(limit),
         Number(currentpage),
     );
-    res.status(200).json({ success: true, address: kelurahan });
+    res.status(200).json({
+        success: true,
+        message: "Data retrieved successfully",
+        data: { addresses: kelurahan },
+    });
 });
 
 export const getAllProvinsi = asyncHandler(async (req, res, next) => {
-    const data = await addressService.getAllProvinsi();
+    const provinsi = await addressService.getAllProvinsi();
 
     res.status(200).json({
         success: true,
-        data,
+        message: "Data retrieved successfully",
+        data: {
+            addresses: provinsi,
+        },
     });
 });
 
@@ -31,7 +38,10 @@ export const getAllKabupaten = asyncHandler(async (req, res, next) => {
 
     res.status(200).json({
         success: true,
-        data,
+        message: "Data retrieved successfully",
+        data: {
+            addresses: data,
+        },
     });
 });
 
@@ -41,7 +51,10 @@ export const getAllKecamatan = asyncHandler(async (req, res, next) => {
 
     res.status(200).json({
         success: true,
-        data,
+        message: "Data retrieved successfully",
+        data: {
+            addresses: data,
+        },
     });
 });
 
@@ -51,6 +64,9 @@ export const getAllKelurahan = asyncHandler(async (req, res, next) => {
 
     res.status(200).json({
         success: true,
-        data,
+        message: "Data retrieved successfully",
+        data: {
+            addresses: data,
+        },
     });
 });

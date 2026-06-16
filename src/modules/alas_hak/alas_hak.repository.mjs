@@ -1,4 +1,8 @@
-import { ExpressError } from "../../shared/utils/custom.error.mjs";
+import {
+    ApiError,
+    ExpressError,
+    KnexError,
+} from "../../shared/utils/custom.error.mjs";
 import db from "../../dbs/db.mjs";
 import TABLE from "../../configs/table.config.mjs";
 
@@ -17,10 +21,198 @@ import TABLE from "../../configs/table.config.mjs";
 
 /**
  *
+ * @param {Object} data
+ * @param {import("knex").Knex.Transaction} trx
+ */
+export async function addAlasHak(data, trx) {
+    try {
+        const conn = trx || db;
+        const [id] = await conn(TABLE.ALASHAK).insert(data);
+        return id;
+    } catch (error) {
+        throw new KnexError(
+            error.message,
+            error.code,
+            error.errno,
+            error.sqlState,
+            error.sqlMessage,
+            error.sql,
+        );
+    }
+}
+
+/**
+ *
+ * @param {Number} id
+ * @param {number[]} clients
+ * @param {import("knex").Knex.Transaction} trx
+ */
+export async function setOwner(id, clients, trx) {
+    try {
+        const conn = trx || db;
+        const clientIds = clients.map((value) => value.id);
+        const existing = await conn(TABLE.$ALASHAK.CLIENTS)
+            .whereIn("client_id", clientIds)
+            .andWhere("alas_hak_id", id);
+
+        const existingIds = existing.map((value) => value.client_id);
+
+        const payload = clientIds.filter(
+            (value) => !existingIds.includes(value),
+        );
+        if (payload.length <= 0) return;
+        await conn(TABLE.$ALASHAK.CLIENTS).insert(
+            payload.map((value) => ({ client_id: value, alas_hak_id: id })),
+        );
+    } catch (error) {
+        throw new KnexError(
+            error.message,
+            error.code,
+            error.errno,
+            error.sqlState,
+            error.sqlMessage,
+            error.sql,
+        );
+    }
+}
+
+/**
+ *
+ * @param {Number} id
+ * @param {Number} client_id
+ * @param {import("knex").Knex} trx
+ */
+export async function removeOwner(id, client_id, trx) {
+    try {
+        const conn = trx || db;
+        await conn(TABLE.$ALASHAK.CLIENTS)
+            .where({ client_id: client_id })
+            .delete();
+    } catch (error) {
+        throw new KnexError(
+            error.message,
+            error.code,
+            error.errno,
+            error.sqlState,
+            error.sqlMessage,
+            error.sql,
+        );
+    }
+}
+
+/**
+ *
+ * @param {Object} data
+ * @param {import("knex").Knex.Transaction}
+ */
+export async function saveDocument(data, trx) {
+    try {
+        const conn = trx || db;
+        await conn(TABLE.$ALASHAK.DOCS).insert({
+            ...data,
+            uploaded_at: new Date(),
+        });
+    } catch (error) {
+        throw new KnexError(
+            error.message,
+            error.code,
+            error.errno,
+            error.sqlState,
+            error.sqlMessage,
+            error.sql,
+        );
+    }
+}
+
+/**
+ *
+ * @param {Number} id
+ * @param {import("knex").Knex.Transaction} trx
+ */
+export async function lockDocsForUpdate(id, trx) {
+    try {
+        const conn = trx || db;
+        return await conn(TABLE.$ALASHAK.DOCS)
+            .where({ id: id })
+            .forUpdate()
+            .first();
+    } catch (error) {
+        throw new KnexError(
+            error.message,
+            error.code,
+            error.errno,
+            error.sqlState,
+            error.sqlMessage,
+            error.sql,
+        );
+    }
+}
+
+/**
+ *
+ * @param {Number} id
+ * @param {Number} doc_id
+ * @param {import("knex").Knex.Transaction} trx
+ */
+export async function deleteDocument(id, doc_id, trx) {
+    try {
+        const conn = trx || db;
+        await conn(TABLE.$ALASHAK.DOCS)
+            .where({ ah_id: id, id: doc_id })
+            .delete();
+    } catch (error) {
+        throw new KnexError(
+            error.message,
+            error.code,
+            error.errno,
+            error.sqlState,
+            error.sqlMessage,
+            error.sql,
+        );
+    }
+}
+
+/**
+ *
+ * @param {Number} id
+ * @param {import("knex").Knex.Transaction} trx
+ * @returns
+ */
+export async function getById(id, trx) {
+    try {
+        const conn = trx || db;
+        return await conn(`${TABLE.ALASHAK} as ah`)
+            .select(["ah.*"])
+            .select(
+                conn.raw(`
+                    (SELECT COALESCE(JSON_ARRAYAGG(
+                    JSON_OBJECT("id", cl.id, "nik", cl.nik, "fullname", cl.fullname, "gender", cl.gender)
+                    ), JSON_ARRAY()) FROM ${TABLE.$ALASHAK.CLIENTS} AS ahc
+                    LEFT JOIN ${TABLE.CLIENTS} AS cl ON ahc.client_id = cl.id
+                    WHERE ahc.alas_hak_id = ah.id
+                    ) as clients
+                `),
+            )
+            .where({ id: id })
+            .first();
+    } catch (error) {
+        throw new KnexError(
+            error.message,
+            error.code,
+            error.errno,
+            error.sqlState,
+            error.sqlMessage,
+            error.sql,
+        );
+    }
+}
+
+/**
+ *
  * @param {Number} id
  * @returns
  */
-export async function get(id) {
+export async function getWithDetails(id) {
     try {
         return await db(`${TABLE.ALASHAK} as ah`)
             .leftJoin(
@@ -55,6 +247,8 @@ export async function get(id) {
                 "ah.created_at",
                 "ah.updated_at",
                 "tp.name as jenis_hak",
+                "ah.type_id",
+                "ah.address_code",
             ])
             .select(
                 db.raw(`
@@ -93,11 +287,36 @@ export async function get(id) {
                 ) as old_owners
                 `),
             )
-
+            .select(
+                db.raw(`
+                (SELECT COALESCE(JSON_ARRAYAGG(JSON_OBJECT("id", c.id, "type", prd.name, "status", c.status)), JSON_ARRAY()) FROM ${TABLE.CASES} AS c 
+                LEFT JOIN ${TABLE.$CASES.PRD} AS prd ON prd.id = c.prd_id 
+                WHERE c.ah_id = ah.id
+                ) as cases
+            `),
+            )
+            .select(
+                db.raw(
+                    `
+                (SELECT COALESCE(JSON_ARRAYAGG(JSON_OBJECT("id", ahd.id, "src", ahd.path, "type", ahd.type, "size", ahd.size, "ah_id", ahd.ah_id, "uploaded_at", ahd.uploaded_at)), 
+                JSON_ARRAY()) 
+                FROM ${TABLE.$ALASHAK.DOCS} AS ahd
+                WHERE ahd.ah_id = ah.id
+                ) as documents
+                `,
+                ),
+            )
             .groupBy("ah.id")
             .first();
     } catch (error) {
-        throw new ExpressError(error.message);
+        throw new KnexError(
+            error.message,
+            error.code,
+            error.errno,
+            error.sqlState,
+            error.sqlMessage,
+            error.sql,
+        );
     }
 }
 
@@ -105,9 +324,11 @@ export async function get(id) {
  *
  * @param {Number} limit
  * @param {Number} offset
+ * @param {String} search
+ * @param {Array} columns
  * @returns
  */
-export async function getAll(limit, offset) {
+export async function getAll(limit, offset, search, columns) {
     try {
         const data = await db(`${TABLE.ALASHAK} as ah`)
             .leftJoin(
@@ -144,13 +365,55 @@ export async function getAll(limit, offset) {
                 JSON_OBJECT("jorong", ah.jor, "kelurahan", kel.name, "kecamatan", kec.name, "kabupaten", kab.name, "provinsi", prov.name) AS address
                 `),
             )
+            .where(function (builder) {
+                if (!search) return;
+
+                let first = true;
+
+                columns.forEach((col) => {
+                    const addClause = (column) => {
+                        if (first) {
+                            builder.whereILike(column, `%${search}%`);
+                            first = false;
+                        } else {
+                            builder.orWhereILike(column, `%${search}%`);
+                        }
+                    };
+
+                    if (col !== "address_code") {
+                        addClause(`ah.${col}`);
+                    } else {
+                        addClause("kel.name");
+                        builder.orWhereILike("kec.name", `%${search}%`);
+                        builder.orWhereILike("kab.name", `%${search}%`);
+                        builder.orWhereILike("prov.name", `%${search}%`);
+                    }
+                });
+            })
             .limit(limit || 10)
             .offset(offset || 0);
 
-        const [{ count }] = await db(TABLE.ALASHAK).count("id as count");
+        const [{ count }] = await db(TABLE.ALASHAK)
+            .where(function (builder) {
+                if (search) {
+                    columns.forEach((value, index) => {
+                        if (index === 0)
+                            builder.whereILike(`${value}`, `%${search}%`);
+                        else builder.andWhereILike(`${value}`, `%${search}%`);
+                    });
+                }
+            })
+            .count("id as count");
         return { data, count };
     } catch (error) {
-        throw new ExpressError(error.message);
+        throw new KnexError(
+            error.message,
+            error.code,
+            error.errno,
+            error.sqlState,
+            error.sqlMessage,
+            error.sql,
+        );
     }
 }
 
@@ -218,7 +481,14 @@ export async function getFilteredAlasHak(limit, offset, filters) {
 
         return { data, count };
     } catch (error) {
-        throw error;
+        throw new KnexError(
+            error.message,
+            error.code,
+            error.errno,
+            error.sqlState,
+            error.sqlMessage,
+            error.sql,
+        );
     }
 }
 
@@ -236,6 +506,29 @@ export async function getOwners(id) {
             .limit(10)
             .offset(0);
     } catch (error) {
-        throw new ExpressError(error.message);
+        throw new KnexError(
+            error.message,
+            error.code,
+            error.errno,
+            error.sqlState,
+            error.sqlMessage,
+            error.sql,
+        );
+    }
+}
+
+export async function getAlasHakTypes() {
+    try {
+        const types = await db(TABLE.$ALASHAK.TYPES).select("*");
+        return types;
+    } catch (error) {
+        throw new KnexError(
+            error.message,
+            error.code,
+            error.errno,
+            error.sqlState,
+            error.sqlMessage,
+            error.sql,
+        );
     }
 }

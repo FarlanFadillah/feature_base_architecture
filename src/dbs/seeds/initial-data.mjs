@@ -308,6 +308,8 @@ export async function seed(knex) {
             tgl_alas_hak: "2020-12-12",
             no_surat_ukur: "00030/Panampuang/2020",
             tgl_surat_ukur: "2020-12-11",
+            created_at: new Date(),
+            updated_at: new Date(),
         },
         {
             id: 2,
@@ -319,6 +321,8 @@ export async function seed(knex) {
             tgl_alas_hak: "2006-12-12",
             no_surat_ukur: "00224/Pasia/2020",
             tgl_surat_ukur: "2006-12-11",
+            created_at: new Date(),
+            updated_at: new Date(),
         },
     ]);
 

@@ -12,7 +12,7 @@ const debug = createDebug("app:middleware:jwt");
  * @param {*} next
  */
 export const validateToken = asyncHandler(async (req, res, next) => {
-    if (process.env.NODE_ENV === "development") return next();
+    // if (process.env.NODE_ENV === "development") return next();
     const authHeader = req.headers.authorization;
     if (!authHeader)
         return next(
@@ -27,5 +27,6 @@ export const validateToken = asyncHandler(async (req, res, next) => {
     debug("[TOKEN VALID]");
     req.user = decoded;
     req.user.role = user.role;
+    req.user.fullname = [user.first_name, user.last_name].join(" ");
     next();
 });

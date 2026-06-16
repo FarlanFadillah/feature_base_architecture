@@ -7,7 +7,7 @@ export const createCase = asyncHandler(async (req, res, next) => {
 
     res.status(httpStatus.OK).json({
         success: true,
-        msg: "Proses Alas Hak added Successfully",
+        message: "Proses Alas Hak added Successfully",
         data: {
             id,
         },
@@ -20,7 +20,7 @@ export const updateCase = asyncHandler(async (req, res, next) => {
 
     res.status(httpStatus.OK).json({
         status: true,
-        msg: "Proses Alas Hak updated successfully",
+        message: "Proses Alas Hak updated successfully",
     });
 });
 
@@ -29,16 +29,19 @@ export const removeCase = asyncHandler(async (req, res, next) => {
     await casesService.remove(id);
     res.status(httpStatus.OK).json({
         success: true,
-        msg: "Proses Alas Hak remove successfully",
+        message: "Proses Alas Hak remove successfully",
     });
 });
 
 export const getCase = asyncHandler(async (req, res, next) => {
     const { id } = req.matchedData;
-    const data = await casesService.getCaseWithDetails(id);
+    const cases = await casesService.getCaseWithDetails(id);
     res.status(httpStatus.OK).json({
         success: true,
-        data,
+        message: "Data retrieved successfully",
+        data: {
+            cases: cases,
+        },
     });
 });
 
@@ -62,7 +65,7 @@ export const nextStep = asyncHandler(async (req, res, next) => {
 
     res.status(httpStatus.OK).json({
         success: true,
-        msg: finished
+        message: finished
             ? "Case is finished"
             : "Case is processed to the next step",
     });
@@ -75,69 +78,43 @@ export const prevStep = asyncHandler(async (req, res, next) => {
 
     res.status(httpStatus.OK).json({
         success: true,
-        msg: "Sending back to the previous step",
-    });
-});
-
-export const addClient = asyncHandler(async (req, res, next) => {
-    const { id, clients_id, roles_id } = req.matchedData;
-    const { result } = await casesService.addClientAndRoles(
-        id,
-        clients_id,
-        roles_id,
-    );
-
-    res.status(httpStatus.OK).json({
-        success: true,
-        msg: "Client and Roles added succesfully",
-        data: result,
-    });
-});
-
-export const removeClient = asyncHandler(async (req, res, next) => {
-    const { id, client_id } = req.matchedData;
-
-    await casesService.removeClientAndRoles(id, client_id);
-    res.status(httpStatus.OK).json({
-        success: true,
-        msg: "Client - Roles relations processed",
-    });
-});
-
-export const updateClient = asyncHandler(async (req, res, next) => {
-    const { id, clients_id, roles_id } = req.matchedData;
-    await casesService.updateClientRoles(id, clients_id, roles_id);
-    res.status(httpStatus.OK).json({
-        success: true,
-        msg: "Client and Roles updated successfully",
+        message: "Sending back to the previous step",
     });
 });
 
 export const getAllCases = asyncHandler(async (req, res, next) => {
     const { currentpage, limit } = req.matchedData;
 
-    const { data, _metadata } = await casesService.getAll(
+    const { cases, _metadata } = await casesService.getAll(
         Number(currentpage),
         Number(limit),
     );
     res.status(httpStatus.OK).json({
         success: true,
-        _metadata,
-        data,
+        message:
+            cases.length > 0 ? "Data retrieved successfully" : "No Data found",
+        data: {
+            _metadata: _metadata,
+            cases: cases,
+        },
     });
 });
 
 export const searchByDate = asyncHandler(async (req, res, next) => {
     const { currentpage, limit, from, to, code = null } = req.matchedData;
-    const { data, _metadata } = await casesService.getFilteredCases(
+    const { cases, _metadata } = await casesService.getFilteredCases(
         Number(currentpage),
         Number(limit),
         { from, to, code },
     );
     res.status(httpStatus.OK).json({
         success: true,
-        _metadata,
-        data,
+        message:
+            cases.length > 0 ? "Data retrieved successfully" : "No Data found",
+        data: {
+            _metadata: _metadata,
+            cases: cases,
+        },
     });
 });
 

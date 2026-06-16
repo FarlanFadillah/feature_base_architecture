@@ -69,28 +69,4 @@ router
         ctrl.getCase,
     );
 
-router
-    .route("/:id/clients")
-    .post(
-        ...mainRules.IDValidationRules,
-        ...rules.clientRolesValidationRules,
-        validate,
-        ctrl.addClient,
-    )
-    .patch(
-        ...mainRules.IDValidationRules,
-        ...rules.clientRolesValidationRules,
-        validate,
-        ctrl.updateClient,
-    );
-
-router
-    .route("/:id/clients/:client_id")
-    .delete(
-        ...mainRules.IDValidationRules,
-        ...rules.removeClientRolesValidationRules,
-        validate,
-        ctrl.removeClient,
-    );
-
 export default router;

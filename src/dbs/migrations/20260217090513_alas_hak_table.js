@@ -47,6 +47,22 @@ export async function up(knex) {
             .inTable("alas_hak")
             .onDelete("SET NULL");
     });
+
+    await knex.schema.createTable("alas_hak_documents", (table) => {
+        table.increments("id").primary();
+        table.string("type").notNullable();
+        table.integer("size").unsigned().notNullable();
+        table
+            .integer("ah_id")
+            .unsigned()
+            .notNullable()
+            .references("alas_hak.id")
+            .onDelete("CASCADE");
+
+        table.unique(["ah_id", "type"], "alas_hak:type_unique");
+        table.string("path").notNullable();
+        table.datetime("uploaded_at");
+    });
 }
 
 /**
@@ -54,6 +70,7 @@ export async function up(knex) {
  * @returns { Promise<void> }
  */
 export async function down(knex) {
+    await knex.schema.dropTable("alas_hak_documents");
     await knex.schema.dropTable("alas_hak");
     await knex.schema.dropTable("types");
 }

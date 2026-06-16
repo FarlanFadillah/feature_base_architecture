@@ -12,7 +12,7 @@ export async function getStats() {
         `);
 
         const clients = await db("clients")
-            .select(["id", "first_name", "last_name"])
+            .select(["id", "nik", "fullname"])
             .limit(5)
             .offset(0)
             .orderBy("id", "desc");

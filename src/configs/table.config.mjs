@@ -11,6 +11,7 @@ export default {
     $ALASHAK: {
         CLIENTS: "alas_hak_clients",
         TYPES: "types",
+        DOCS: "alas_hak_documents",
     },
     CASES: "cases",
     $CASES: {

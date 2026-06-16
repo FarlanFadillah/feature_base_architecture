@@ -29,7 +29,7 @@ export function stringRequired(field, location = "body") {
  */
 export function stringOptional(field, location = "body") {
     return validator[location](field)
-        .optional()
+        .optional({ values: "falsy" })
         .trim()
         .matches(/^[^<>]*$/)
         .withMessage(field + " cant contain html element");
@@ -42,7 +42,7 @@ export function stringOptional(field, location = "body") {
  */
 export function numericalOptional(field, location = "body") {
     return validator[location](field)
-        .optional()
+        .optional({ values: "falsy" })
         .isNumeric()
         .withMessage(`${field} must be a numeric`);
 }
@@ -92,7 +92,7 @@ export function intOptional(field, location = "body", min, max) {
     if (min !== undefined) options.min = min;
     if (max !== undefined) options.max = max;
     return validator[location](field)
-        .optional()
+        .optional({ values: "falsy" })
         .isInt(options)
         .withMessage(`${field} must be an integer`);
 }
@@ -105,7 +105,8 @@ export function intOptional(field, location = "body", min, max) {
  */
 export function mobilePhoneOptional(field, location = "body") {
     return validator[location](field)
-        .optional()
+        .optional({ values: "null" })
+        .if(validator[location](field).notEmpty())
         .isMobilePhone()
         .withMessage(`Invalid ${field} value`);
 }
@@ -132,7 +133,7 @@ export function mobilePhoneRequired(field, location = "body") {
  */
 export function emailOptional(field = "email", location = "body") {
     return validator[location](field)
-        .optional()
+        .optional({ values: "falsy" })
         .isEmail()
         .withMessage("Invalid email address")
         .normalizeEmail();
@@ -161,7 +162,7 @@ export function emailRequired(field = "email", location = "body") {
  */
 export function dateOptional(field, location = "body") {
     return validator[location](field)
-        .optional()
+        .optional({ values: "falsy" })
         .isDate()
         .withMessage("Invalid date");
 }
@@ -174,7 +175,7 @@ export function dateOptional(field, location = "body") {
  */
 export function dateRequired(field, location = "body") {
     return validator[location](field)
-        .optional()
+        .optional({ values: "falsy" })
         .isDate()
         .withMessage("Invalid date");
 }
@@ -200,7 +201,7 @@ export function addressRequired(field, location = "body") {
  */
 export function addressOptional(field, location = "body") {
     return validator[location](field)
-        .optional()
+        .optional({ values: "falsy" })
         .custom(async (value) => {
             const address = await db("kelurahan").where({ id: value });
             if (address.length <= 0) throw new Error("Invalid address code");
@@ -257,7 +258,7 @@ export function stringIncludeRequired(field, arr, location = "body") {
  */
 export function stringIncludeOptional(field, arr, location = "body") {
     return validator[location](field)
-        .optional()
+        .optional({ values: "falsy" })
         .custom(async (value, { req }) => {
             if (!arr.includes(value))
                 throw new ExpressError(`Value invalid [${arr}]`);
@@ -273,6 +274,21 @@ export function isArrayOfObjects(field) {
     return [
         validator.body(field).optional().isArray({ min: 1 }),
         validator.body(`${field}.*`).optional().isObject({ strict: true }),
+    ];
+}
+
+/**
+ *
+ * @param {String} field
+ * @returns {Array}
+ */
+export function isArrayOfObjectsRequired(field) {
+    return [
+        validator
+            .body(field)
+            .isArray({ min: 1 })
+            .withMessage("Clients can't be emtpy"),
+        validator.body(`${field}.*`).isObject({ strict: true }),
     ];
 }
 
@@ -297,7 +313,7 @@ export function booleanRequired(field, location = "body") {
  */
 export function booleanOptional(field, location = "body") {
     return validator[location](field)
-        .optional()
+        .optional({ values: "falsy" })
         .isBoolean()
         .withMessage(`${field} can't empty`);
 }

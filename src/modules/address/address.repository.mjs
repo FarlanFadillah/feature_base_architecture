@@ -1,5 +1,5 @@
 import db from "../../dbs/db.mjs";
-import { ExpressError } from "../../shared/utils/custom.error.mjs";
+import { ExpressError, KnexError } from "../../shared/utils/custom.error.mjs";
 import TABLE from "../../configs/table.config.mjs";
 
 /**
@@ -15,7 +15,14 @@ export async function get(table, name) {
             .select("id")
             .first();
     } catch (error) {
-        throw new ExpressError(error.message);
+        throw new KnexError(
+            error.message,
+            error.code,
+            error.errno,
+            error.sqlState,
+            error.sqlMessage,
+            error.sql,
+        );
     }
 }
 
@@ -28,7 +35,14 @@ export async function getKelurahan(name, limit, offset) {
             .offset(offset);
         return addresses;
     } catch (error) {
-        throw new ExpressError(error.message);
+        throw new KnexError(
+            error.message,
+            error.code,
+            error.errno,
+            error.sqlState,
+            error.sqlMessage,
+            error.sql,
+        );
     }
 }
 export async function getKecamatan(name) {

@@ -5,9 +5,8 @@ import createDebug from "debug";
 const debug = createDebug("app:middleware:validator");
 
 export function validate(req, res, next) {
-    debug(req.body);
+    // debug(req.body);
     const result = validationResult(req);
-
     if (result.isEmpty()) {
         debug("[REQUEST VALID]");
         req.matchedData = matchedData(req);
@@ -17,5 +16,9 @@ export function validate(req, res, next) {
     const errors = {};
     result.errors.map((data) => (errors[data.path] = data.msg));
 
-    res.status(422).json({ status: false, msg: "validation failed", errors });
+    res.status(422).json({
+        status: false,
+        message: "validation failed",
+        errors,
+    });
 }

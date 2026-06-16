@@ -298,7 +298,7 @@ export async function getCaseData(id, trx) {
 export async function getAll(currentpage, limit) {
     try {
         const offset = (currentpage - 1) * limit;
-        const { data, count } = await casesRepo.getAll(limit, offset);
+        const { cases, count } = await casesRepo.getAll(limit, offset);
         const _metadata = jsonHelper.paginationMetadata(
             "cases",
             currentpage,
@@ -306,7 +306,7 @@ export async function getAll(currentpage, limit) {
             count,
         );
 
-        return { data, _metadata };
+        return { cases, _metadata };
     } catch (error) {
         throw error;
     }
@@ -333,7 +333,7 @@ export async function getFilteredCases(currentpage, limit, filters) {
             filters.to = to.toISOString();
         }
 
-        const { data, count } = await casesRepo.getFilteredCases(
+        const { cases, count } = await casesRepo.getFilteredCases(
             limit,
             offset,
             filters,
@@ -351,127 +351,7 @@ export async function getFilteredCases(currentpage, limit, filters) {
             ],
         );
 
-        return { data, _metadata };
-    } catch (error) {
-        throw error;
-    }
-}
-
-/**
- *
- * @param {Number} id
- * @param {Array} clients_id
- * @param {Number} roles_id
- */
-export async function addClientAndRoles(id, clients_id, roles_id) {
-    try {
-        const result = {
-            proses_id: id,
-            created: [],
-            skipped: [],
-            invalid: [],
-        };
-        for (const cl_id of clients_id) {
-            if (!(await mainRepo.isExists("clients", cl_id))) {
-                result.invalid.push({
-                    client_id: cl_id,
-                    reason: "CLIENT_NOT_FOUND",
-                });
-                continue;
-            } else if (
-                await mainRepo.isRowExists("case_clients", {
-                    pah_id: id,
-                    client_id: cl_id,
-                })
-            ) {
-                result.skipped.push({
-                    client_id: cl_id,
-                    reason: "ENTRY_ALREADY_EXISTS",
-                });
-                continue;
-            }
-            await mainRepo.create("case_clients", {
-                pah_id: id,
-                client_id: cl_id,
-                roles_id,
-            });
-            cache.delByPattern(`:clients:id:${cl_id}`);
-            result.created.push({ client_id: cl_id, reason: "SUCCESS" });
-        }
-
-        cache.delByPattern(`:cases:id:${id}`);
-        cache.delByPattern(":cases:list:");
-        return { result };
-    } catch (error) {
-        throw error;
-    }
-}
-
-/**
- *
- * @param {Number} id
- * @param {Number} client_id
- */
-export async function removeClientAndRoles(id, client_id) {
-    try {
-        if (!(await mainRepo.isExists("cases", id))) {
-            throw new ExpressError("Proses not found", 404);
-        } else if (!(await mainRepo.isExists("clients", client_id))) {
-            throw new ExpressError("Client not found", 404);
-        } else if (
-            !(await mainRepo.isRowExists("case_clients", {
-                pah_id: id,
-                client_id,
-            }))
-        ) {
-            throw new ExpressError("Proses - Client relations not found", 404);
-        }
-
-        await mainRepo.removeWhere("case_clients", {
-            pah_id: id,
-            client_id,
-        });
-        cache.delByPattern(`:clients:id:${client_id}`);
-        cache.delByPattern(`:cases:id:${id}`);
-        cache.delByPattern(":cases:list:");
-    } catch (error) {
-        throw error;
-    }
-}
-
-/**
- *
- * @param {Number} id
- * @param {Number} client_id
- * @param {Number} roles_id
- */
-export async function updateClientRoles(id, client_id, roles_id) {
-    try {
-        if (!(await mainRepo.isExists("cases", id))) {
-            throw new ExpressError("Proses not found", 404);
-        } else if (!(await mainRepo.isExists("clients", client_id))) {
-            throw new ExpressError("Client not found", 404);
-        } else if (
-            !(await mainRepo.isRowExists("case_clients", {
-                pah_id: id,
-                client_id,
-            }))
-        ) {
-            throw new ExpressError("Proses - Client relations not found", 404);
-        }
-
-        await mainRepo.updateWhere(
-            "case_clients",
-            {
-                pah_id: id,
-                client_id,
-            },
-            { roles_id },
-        );
-
-        cache.delByPattern(`:clients:id:${client_id}`);
-        cache.delByPattern(`:cases:id:${id}`);
-        cache.delByPattern(":cases:list:");
+        return { cases, _metadata };
     } catch (error) {
         throw error;
     }

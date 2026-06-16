@@ -17,21 +17,12 @@ router
     .post(...rules.createClientValidationRules, validate, ctrl.addClient)
     .get(
         ...mainRules.paginationValidationRules,
+        ...rules.searchValidationRules,
         validate,
         pagination,
         cache.cachingMiddleware(keyBuilder("clients:list")),
         ctrl.getAllClientsLimitOffset,
     );
-
-router.get(
-    "/search",
-    ...mainRules.paginationValidationRules,
-    ...rules.searchValidationRules,
-    validate,
-    pagination,
-    cache.cachingMiddleware(keyBuilder("clients:list")),
-    ctrl.searchClient,
-);
 
 router
     .route("/:id")
@@ -46,7 +37,6 @@ router
         ...mainRules.IDValidationRules,
         ...rules.patchClientValidationRules,
         validate,
-        pagination,
         ctrl.updateClientData,
     )
     .put(
@@ -57,13 +47,23 @@ router
     );
 
 router
-    .route("/:id/upload")
+    .route("/:id/edit")
+    .get(...mainRules.IDValidationRules, validate, ctrl.getClientForUpdate);
+
+router
+    .route("/:id/uploads")
     .post(
         upload.single("document"),
         ...mainRules.IDValidationRules,
         ...rules.filenameValidationRules,
         validate,
         ctrl.uploadClientDocument,
+    )
+    .delete(
+        ...mainRules.IDValidationRules,
+        ...rules.deleteDocumentValidationRules,
+        validate,
+        ctrl.deleteClientDocument,
     );
 
 router

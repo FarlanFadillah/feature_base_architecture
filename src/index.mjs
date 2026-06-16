@@ -19,14 +19,13 @@ import {
 
 const app = express();
 app.set("etag", false);
-app.set("trust proxy", true);
-
-app.use("/public", express.static(path.resolve("public")));
+// app.set("trust proxy", true);
 
 app.use(express.json({ type: "application/json" }));
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan("dev"));
 app.use(cors());
+app.use("/public", express.static(path.resolve("public")));
 
 app.use("/api/v1", routerV1);
 
@@ -34,7 +33,7 @@ app.use(globalErrorHandler);
 app.use(missingEndpoint);
 
 const PORT = process.env.PORT || 3030;
-const server = app.listen(PORT, (error) => {
+const server = app.listen(PORT, "0.0.0.0", (error) => {
     if (error) debug(error);
     else debug(`Server listening on http://localhost:${PORT}`);
 });
