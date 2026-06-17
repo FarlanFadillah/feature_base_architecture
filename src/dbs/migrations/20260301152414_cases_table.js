@@ -84,20 +84,15 @@ export async function up(knex) {
             .inTable("cases")
             .onDelete("CASCADE");
 
-        table
-            .integer("step_id")
-            .unsigned()
-            .notNullable()
-            .references("id")
-            .inTable("workflows")
-            .onDelete("CASCADE");
+        table.integer("order").unsigned().notNullable();
 
         table.enum("status", enumStatus).defaultTo(enumStatus[0]);
         table.string("note");
         table.timestamp("started_at").defaultTo(knex.fn.now());
         table.timestamp("completed_at");
 
-        table.index(["case_id", "step_id"]);
+        table.index(["case_id", "status"]);
+        table.index("status");
     });
 
     await knex.schema.alterTable("cases", (table) => {

@@ -25,13 +25,13 @@ export async function seed(knex) {
     ]);
 
     await knex("client_roles").insert([
-        { id: 1, name: "PEMBERI_HAK" },
-        { id: 2, name: "PENERIMA_HAK" },
-        { id: 3, name: "PIHAK_PERSETUJUAN" },
-        { id: 4, name: "KUASA_PEMBERI" },
-        { id: 5, name: "KUASA_PENERIMA" },
-        { id: 6, name: "PEMOHON" },
-        { id: 7, name: "SAKSI" },
+        { id: 1, name: "PEMBERI_HAK", label: "Pemberi Hak" },
+        { id: 2, name: "PENERIMA_HAK", label: "Penerima Hak" },
+        { id: 3, name: "PIHAK_PERSETUJUAN", label: "Pihak Persetujuan" },
+        { id: 4, name: "KUASA_PEMBERI", label: "Kuasa Pemberi" },
+        { id: 5, name: "KUASA_PENERIMA", label: "Kuasa Penerima" },
+        { id: 6, name: "PEMOHON", label: "Pemohon" },
+        { id: 7, name: "SAKSI", label: "Saksi" },
     ]);
 
     // const [[{ ROLES }]] = await knex.raw(`
@@ -132,7 +132,14 @@ export async function seed(knex) {
             can_skip: false,
             validation: {
                 handler: "alashak",
-                fields: [{ name: "ah_id", type: "number", required: true }],
+                fields: [
+                    {
+                        name: "ah_id",
+                        label: "Alas Hak",
+                        type: "number",
+                        required: true,
+                    },
+                ],
                 invalidation: null,
             },
         },
@@ -146,6 +153,7 @@ export async function seed(knex) {
                 fields: [
                     {
                         name: "clients",
+                        label: "Klien",
                         type: "array",
                         required: true,
                         min: 1,
@@ -168,7 +176,12 @@ export async function seed(knex) {
             validation: {
                 handler: "bphtb",
                 fields: [
-                    { name: "tgl_berkas_masuk", type: "date", required: true },
+                    {
+                        name: "tgl_berkas_masuk",
+                        label: "Tanggal Berkas Masuk",
+                        type: "date",
+                        required: true,
+                    },
                 ],
                 invalidation: {
                     strategy: "delete",
@@ -183,8 +196,18 @@ export async function seed(knex) {
             validation: {
                 handler: "bphtb",
                 fields: [
-                    { name: "tgl_survei", type: "date", required: true },
-                    { name: "hasil_survei", type: "number", required: true },
+                    {
+                        name: "tgl_survei",
+                        label: "Tanggal Survei",
+                        type: "date",
+                        required: true,
+                    },
+                    {
+                        name: "hasil_survei",
+                        label: "Hasil Survei",
+                        type: "number",
+                        required: true,
+                    },
                 ],
                 invalidation: {
                     strategy: "nullify",
@@ -202,10 +225,16 @@ export async function seed(knex) {
                 fields: [
                     {
                         name: "tgl_perintah_bayar",
+                        label: "Tanggal Perintah Bayar",
                         type: "date",
                         required: true,
                     },
-                    { name: "total_bayar", type: "number", required: true },
+                    {
+                        name: "total_bayar",
+                        label: "Total Bayar",
+                        type: "number",
+                        required: true,
+                    },
                 ],
                 invalidation: {
                     strategy: "nullify",
@@ -223,6 +252,7 @@ export async function seed(knex) {
                 fields: [
                     {
                         name: "tgl_bayar",
+                        label: "Tanggal Bayar",
                         type: "date",
                         required: true,
                     },
@@ -241,9 +271,24 @@ export async function seed(knex) {
             validation: {
                 handler: "pph",
                 fields: [
-                    { name: "code", type: "string", required: true },
-                    { name: "date", type: "date", required: true },
-                    { name: "client_id", type: "number", required: true },
+                    {
+                        name: "code",
+                        label: "Kode Billing",
+                        type: "string",
+                        required: true,
+                    },
+                    {
+                        name: "date",
+                        label: "Tanggal Billing",
+                        type: "date",
+                        required: true,
+                    },
+                    {
+                        name: "client_id",
+                        label: "Klien",
+                        type: "number",
+                        required: true,
+                    },
                 ],
                 invalidation: {
                     strategy: "delete",
@@ -258,9 +303,15 @@ export async function seed(knex) {
             validation: {
                 handler: "pph",
                 fields: [
-                    { name: "paid_date", type: "date", required: true },
+                    {
+                        name: "paid_date",
+                        label: "Tanggal Bayar",
+                        type: "date",
+                        required: true,
+                    },
                     {
                         name: "total_tax",
+                        label: "Total Bayar",
                         type: "number",
                         required: true,
                     },
@@ -279,9 +330,25 @@ export async function seed(knex) {
             validation: {
                 handler: "akta",
                 fields: [
-                    { name: "number", type: "number", required: true },
-                    { name: "year", type: "string", length: 4, required: true },
-                    { name: "date", type: "date", required: true },
+                    {
+                        name: "number",
+                        label: "Nomor Akta",
+                        type: "number",
+                        required: true,
+                    },
+                    {
+                        name: "year",
+                        label: "Tahun Akta",
+                        type: "string",
+                        length: 4,
+                        required: true,
+                    },
+                    {
+                        name: "date",
+                        label: "Tanggal Akta",
+                        type: "date",
+                        required: true,
+                    },
                 ],
                 invalidation: {
                     strategy: "delete",

@@ -219,7 +219,7 @@ export async function isRowExists(table, model) {
  *
  * @param {String} table
  * @param {Object} model
- * @param {import("knex").Knex.Transaction}
+ * @param {import("knex").Knex.Transaction} trx
  * @returns
  */
 export async function isExistsWhere(table, model, trx) {

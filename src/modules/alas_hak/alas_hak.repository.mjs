@@ -365,6 +365,13 @@ export async function getAll(limit, offset, search, columns) {
                 JSON_OBJECT("jorong", ah.jor, "kelurahan", kel.name, "kecamatan", kec.name, "kabupaten", kab.name, "provinsi", prov.name) AS address
                 `),
             )
+            .select(
+                db.raw(`
+                   (SELECT COALESCE(JSON_ARRAYAGG(JSON_OBJECT("fullname", cl.fullname, "nik", cl.nik)), JSON_ARRAY()) FROM ${TABLE.$ALASHAK.CLIENTS} AS ahc 
+                   LEFT JOIN ${TABLE.CLIENTS} AS cl ON cl.id = ahc.client_id
+                   WHERE ahc.alas_hak_id = ah.id) as owners
+                `),
+            )
             .where(function (builder) {
                 if (!search) return;
 

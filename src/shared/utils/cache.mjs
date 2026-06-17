@@ -39,6 +39,9 @@ export function get(key) {
  */
 export function delByPattern(str) {
     for (const key of cache.keys()) {
-        if (key.includes(str)) cache.del(key);
+        if (key.includes(str)) {
+            cache.del(key);
+            console.log(`Deleting ${key}`);
+        }
     }
 }

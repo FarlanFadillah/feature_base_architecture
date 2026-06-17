@@ -144,9 +144,7 @@ export async function validateStepData(case_id, data) {
         throw new ExpressError(
             "Current step does not have requirement, you can continue",
         );
-    else if (valid) {
-        throw new ExpressError("Current step is valid, you can continue");
-    }
+
     const { handler = null, fields = null } = validation;
     const schema = joiUtils.buildJoiSchema(fields);
     const { value: dto, error } = schema.validate(data, {
@@ -179,14 +177,7 @@ export async function validateAlasHak(case_id, data, trx) {
     if (!ah_exists) throw new ExpressError("Alas Hak not found", 404);
 
     // check if the Alas Hak case is still ongoing
-    const ah_conflict = await mainRepo.isExistsWhere(
-        configs.TABLE.CASES,
-        {
-            ah_id: ah_id,
-            status: "IN PROGRESS",
-        },
-        trx,
-    );
+    const ah_conflict = await casesRepo.alasHakConflict(case_id, ah_id, trx);
     if (ah_conflict) {
         throw new ExpressError(
             `Alas Hak masih terikat dengan case yang sedang berlangsung`,

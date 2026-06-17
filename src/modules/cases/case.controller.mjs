@@ -48,9 +48,6 @@ export const getCase = asyncHandler(async (req, res, next) => {
 export const validateStep = asyncHandler(async (req, res, next) => {
     const { id } = req.matchedData;
     const data = req.body;
-
-    console.log(data);
-
     await casesService.validateStep(id, data);
 
     res.status(httpStatus.OK).json({
@@ -120,5 +117,9 @@ export const searchByDate = asyncHandler(async (req, res, next) => {
 
 export const getRoles = asyncHandler(async (req, res, next) => {
     const roles = await casesService.getRoles();
-    res.status(httpStatus.OK).json({ success: true, data: roles });
+    res.status(httpStatus.OK).json({
+        success: true,
+        message: "Data retrieved successfully",
+        data: { roles: roles },
+    });
 });

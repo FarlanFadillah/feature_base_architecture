@@ -3,7 +3,7 @@ import * as casesRepo from "./case.repository.mjs";
 import * as logRepo from "../../shared/repositories/logs.repository.mjs";
 import * as casesHelper from "./case.helper.mjs";
 import * as jsonHelper from "../../shared/helper/json.helper.mjs";
-import { ExpressError } from "../../shared/utils/custom.error.mjs";
+import { ApiError, ExpressError } from "../../shared/utils/custom.error.mjs";
 import * as cache from "../../shared/utils/cache.mjs";
 import db from "../../dbs/db.mjs";
 import * as dshelper from "../../shared/utils/ds.mjs";
@@ -216,27 +216,33 @@ export async function prevStep(id) {
  * @param {import("knex").Knex.Transaction} trx
  */
 export async function validateStep(case_id, data) {
-    const { dto, handler, current_step_name } =
-        await casesHelper.validateStepData(case_id, data);
-    await db.transaction(async (trx) => {
-        await handlers.validate[handler](case_id, dto, trx);
-        await casesRepo.updateCurrentStep(
-            case_id,
-            {
-                valid: true,
-                completed_at: new Date(),
-            },
-            trx,
-        );
+    try {
+        const { dto, handler, current_step_name } =
+            await casesHelper.validateStepData(case_id, data);
+        await db.transaction(async (trx) => {
+            await handlers.validate[handler](case_id, dto, trx);
+            await casesRepo.updateCurrentStep(
+                case_id,
+                {
+                    valid: true,
+                    completed_at: new Date(),
+                },
+                trx,
+            );
 
-        await logRepo.insertLogs(
-            case_id,
-            "cases",
-            `[${current_step_name}] step is valid.`,
-            "info",
-            trx,
-        );
-    });
+            await logRepo.insertLogs(
+                case_id,
+                "cases",
+                `[${current_step_name}] step is valid.`,
+                "info",
+                trx,
+            );
+            cache.delByPattern(":cases:list:");
+            cache.delByPattern(`:cases:id:${case_id}`);
+        });
+    } catch (error) {
+        throw error;
+    }
 }
 
 /**

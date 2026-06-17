@@ -59,7 +59,7 @@ export async function createSteps(case_id, prd_id, trx) {
             .sort((a, b) => a.order - b.order)
             .map((val, index) => ({
                 case_id: case_id,
-                step_id: val.id,
+                order: val.order,
                 name: val.name,
                 status: index === 0 ? "IN PROGRESS" : "DRAFT",
                 validation: val.validation,
@@ -115,7 +115,7 @@ export async function getNextStep(case_id, current_step_id, trx) {
 
         return await conn(TABLE.$CASES.STEPS)
             .where({ case_id: case_id })
-            .andWhere("step_id", ">", current_step.step_id)
+            .andWhere("order", ">", current_step.order)
             .first();
     } catch (error) {
         throw new ExpressError(error.message, error.http_status || 400);
@@ -139,7 +139,7 @@ export async function getPrevStep(case_id, step_id, trx) {
             throw new ExpressError("Current step does not exists", 404);
         return await conn(TABLE.$CASES.STEPS)
             .where({ case_id: case_id })
-            .andWhere("step_id", "=", current_step.step_id - 1)
+            .andWhere("order", "=", current_step.order - 1)
             .first();
     } catch (error) {
         throw new ExpressError(error.message, error.http_status || 400);
@@ -356,7 +356,7 @@ export async function getById(id, trx) {
                 LEFT JOIN ${TABLE.$CLIENTS.ROLES} as cr on cr.id = cc.role_id
                 WHERE cc.case_id = c.id
             ) AS clients,
-            (SELECT JSON_ARRAYAGG(JSON_OBJECT("id", cs.id, "status", cs.status, "name", wf.name, "is_active",
+            (SELECT JSON_ARRAYAGG(JSON_OBJECT("id", cs.id, "order", cs.order, "status", cs.status, "name", cs.name, "is_active",
                 CASE
                     WHEN cs.id = c.current_step THEN 1
                     ELSE 0
@@ -364,7 +364,6 @@ export async function getById(id, trx) {
                 "valid", cs.valid,
                 "validation", cs.validation
             )) FROM ${TABLE.$CASES.STEPS} as cs
-                LEFT JOIN ${TABLE.WORKFLOWS} AS wf on wf.id = cs.step_id
                 WHERE cs.case_id = c.id
             ) as case_steps,
             (SELECT JSON_ARRAYAGG(JSON_OBJECT("description", al.desc, "level", al.level, "timestamp", al.timestamp)) 
@@ -438,6 +437,26 @@ export async function getFilteredCases(limit, offset, filters) {
 
 /**
  *
+ * @param {Number} case_id
+ * @param {Number} ah_id
+ * @param {import("knex").Knex.Transaction} trx
+ */
+export async function alasHakConflict(case_id, ah_id, trx) {
+    try {
+        const conn = trx || db;
+
+        const { count } = await conn(TABLE.CASES)
+            .where({ ah_id: ah_id, status: "IN PROGRESS" })
+            .andWhere("id", "!=", case_id)
+            .count("* as count")
+            .first();
+
+        return count > 0;
+    } catch (error) {}
+}
+
+/**
+ *
  * @param {Number} limit
  * @param {Number} offset
  * @returns
@@ -446,7 +465,7 @@ export async function getAll(limit, offset) {
     try {
         const cases = await db(`${TABLE.CASES} as c`)
             .leftJoin(`${TABLE.$CASES.PRD} as prd`, "prd.id", "c.prd_id")
-            .select(["c.id", "c.code", "c.status", "prd.name as products"])
+            .select(["c.id", "c.code", "c.status", "prd.name as product"])
             .limit(limit)
             .offset(offset);
 
@@ -515,7 +534,7 @@ export async function searchByDate(limit, offset, from, to, code) {
 
 export async function getRoles() {
     try {
-        return await db("client_roles").select(["id", "name"]);
+        return await db("client_roles").select(["id", "name", "label"]);
     } catch (error) {
         throw new ExpressError(error.message);
     }

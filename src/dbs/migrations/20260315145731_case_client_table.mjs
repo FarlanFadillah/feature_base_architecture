@@ -7,6 +7,7 @@ export async function up(knex) {
     await knex.schema.createTable("client_roles", (table) => {
         table.increments("id").primary();
         table.string("name", 255);
+        table.string("label", 255);
     });
 
     // --- TABLE: proses_client ---
